@@ -28,7 +28,7 @@ Diferente de softwares de extração (como Cellebrite ou IPED), este analisador 
 
 Você pode baixar a versão executável (.exe) mais recente na aba de **Releases** deste repositório. Não é necessário instalar Python.
 
-[👉 **CLIQUE AQUI PARA BAIXAR A VERSÃO MAIS RECENTE (v1.0)**](LINK_DO_SEU_RELEASE_AQUI)
+[👉 **CLIQUE AQUI PARA BAIXAR A VERSÃO MAIS RECENTE (v1.0)**] https://github.com/GabrielSi2022/Analise-Instagram/releases/tag/V1.0
 
 > *Nota: O executável é portátil. Basta baixar e rodar.*
 
@@ -55,13 +55,11 @@ Você precisa ter em mãos a pasta da extração do celular , contendo:
 
 ## 🖥️ Screenshots
 
-*(Adicione aqui um print da tela do programa rodando e um print de um pedaço do relatório HTML gerado)*
+
 
 | Interface do Software | Exemplo do Relatório HTML |
 |:---:|:---:|
-| ![Interface](link_da_imagem_interface.png) | ![Relatório](link_da_imagem_relatorio.png) |
-
----
+| ![Interface]![alt text](image.png) |
 
 ## ⚙️ Detalhes Técnicos (Para Peritos)
 
@@ -82,4 +80,4 @@ Este software é uma ferramenta de auxílio à investigação policial. A integr
 
 ---
 
-**Autor:** [Seu Nome / Delegacia de Machado]
+**Autor:** [Gabriel Henrique Bueno / Delegacia de Machado]
