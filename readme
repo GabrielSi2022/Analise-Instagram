@@ -53,14 +53,6 @@ Você precisa ter em mãos a pasta da extração do celular , contendo:
 
 ---
 
-## 🖥️ Screenshots
-
-
-
-| Interface do Software | Exemplo do Relatório HTML |
-|:---:|:---:|
-| ![Interface]![alt text](image.png) |
-
 ## ⚙️ Detalhes Técnicos (Para Peritos)
 
 A ferramenta utiliza uma abordagem de engenharia reversa para correlacionar dados:
