@@ -61,7 +61,7 @@ Você precisa ter em mãos a pasta da extração do celular , contendo:
 |:---:|:---:|
 | ![Interface]![alt text](image.png) |
 
-## ⚙️ Detalhes Técnicos (Para Peritos)
+## ⚙️ Detalhes Técnicos
 
 A ferramenta utiliza uma abordagem de engenharia reversa para correlacionar dados:
 
