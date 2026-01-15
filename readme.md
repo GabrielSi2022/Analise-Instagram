@@ -11,13 +11,13 @@
 
 Este software é uma ferramenta de **Análise Forense (Post-Extraction Analysis)** projetada para processar dados brutos extraídos de dispositivos móveis (Android), especificamente focada no aplicativo **Instagram**.
 
-Diferente de softwares de extração (como Cellebrite ou IPED), este analisador foca na **reconstrução visual e lógica** das evidências já extraídas. Ele cruza bancos de dados SQLite (`direct.db`) com o sistema de arquivos (mídias) para gerar um **Dossiê HTML Interativo** pronto para inquéritos policiais.
+Diferente de softwares de extração (como Cellebrite ), este analisador foca na **reconstrução visual e lógica** das evidências já extraídas. Ele cruza bancos de dados SQLite (`direct.db`) com o sistema de arquivos (mídias) para gerar um **Dossiê HTML Interativo** pronto para inquéritos policiais.
 
 ### 🚀 Principais Funcionalidades
 
 * **Reconstrução de Chat:** Transforma dados brutos do SQLite em uma interface visual idêntica ao aplicativo original.
 * **Algoritmo de Busca Híbrida (Dual-Layer):** Utiliza busca binária e *Nearest Neighbor* para localizar áudios e vídeos que possuem timestamps ligeiramente diferentes da mensagem de texto (margem de tolerância de 60s).
-* **Filtro Anti-Ruído:** Remove automaticamente arquivos de cache corrompidos ("vídeos do futuro") e ícones de sistema, mantendo apenas evidências relevantes.
+* **Filtro Anti-Ruído:** Remove automaticamente arquivos de cache corrompidos e ícones de sistema, mantendo apenas evidências relevantes.
 * **Player de Vídeo com Rota de Fuga:** Exibe vídeos compatíveis no navegador e oferece um botão de **"Download/Abrir Externo"** para codecs complexos (H.265/HEVC), garantindo que nenhuma prova seja perdida.
 * **Timeline de Evidências:** Galeria cronológica de Stories, Rascunhos e Mídias de Cache não vinculadas diretamente ao chat.
 * **Identificação Automática:** Detecta o proprietário do dispositivo e os interlocutores.
