@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['Analisador_PCMG_Final.py'],
+    ['Analise_Instagram.py'],
     pathex=[],
     binaries=[],
     datas=[],
