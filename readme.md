@@ -28,7 +28,7 @@ Diferente de softwares de extração (como Cellebrite ), este analisador foca na
 
 Você pode baixar a versão executável (.exe) mais recente na aba de **Releases** deste repositório. Não é necessário instalar Python.
 
-[👉 **CLIQUE AQUI PARA BAIXAR A VERSÃO MAIS RECENTE (v1.0)**] https://github.com/GabrielSi2022/Analise-Instagram/releases/tag/V1.0
+[👉 **CLIQUE AQUI PARA BAIXAR A VERSÃO MAIS RECENTE ] https://github.com/GabrielSi2022/Analise-Instagram/releases
 
 > *Nota: O executável é portátil. Basta baixar e rodar.*
 
