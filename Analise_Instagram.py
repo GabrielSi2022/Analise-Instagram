@@ -2,7 +2,7 @@ import sqlite3
 import datetime
 import json
 import os
-import sys  
+import sys  # IMPORTANTE: Necessário para o .exe encontrar as pastas internas
 import re
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -16,9 +16,9 @@ ANO_MINIMO = 2015
 ANO_MAXIMO = 2029            
 ARQUIVO_CONFIG = "config_forense.json"
 
-# --- FUNÇÃO MÁGICA PARA O .EXE ACHAR AS IMAGENS ---
+# --- FUNÇÃO ESSENCIAL PARA O .EXE ---
 def resource_path(relative_path):
-    """ Retorna o caminho absoluto para recursos, funcione em dev ou como .exe """
+    """ Retorna o caminho absoluto do recurso, funcione em dev ou como .exe """
     try:
         # PyInstaller cria uma pasta temporária em _MEIPASS
         base_path = sys._MEIPASS
@@ -27,8 +27,8 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-# Agora usamos a função para definir onde está a pasta
-PASTA_LOGOS = resource_path("logos") 
+# Define a pasta de logos usando a função acima
+PASTA_LOGOS = resource_path("logos")
 
 # --- UTILITÁRIOS DE CONFIGURAÇÃO ---
 
@@ -42,7 +42,6 @@ def carregar_configuracoes():
         try:
             with open(ARQUIVO_CONFIG, "r", encoding="utf-8") as f:
                 conf = json.load(f)
-                
                 for k, v in padrao.items():
                     if k not in conf: conf[k] = v
                 return conf
@@ -74,13 +73,16 @@ def imagem_para_base64(caminho_imagem):
     except:
         return ""
 
-# ### NOVO: Função para listar arquivos na pasta 'logo' ###
 def listar_logos_padrao():
+    """ Lista arquivos de imagem na pasta 'logo' (dentro do exe ou local) """
     logos = []
     if os.path.exists(PASTA_LOGOS):
-        for f in os.listdir(PASTA_LOGOS):
-            if f.lower().endswith(('.png', '.jpg', '.jpeg')):
-                logos.append(f)
+        try:
+            for f in os.listdir(PASTA_LOGOS):
+                if f.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    logos.append(f)
+        except Exception as e:
+            print(f"Erro ao ler pasta logos: {e}")
     logos.sort()
     return logos
 
@@ -298,7 +300,7 @@ class RelatorioHTML:
 def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envolvido):
     try:
         salvar_configuracoes(nome_inst, path_logo, tipo_envolvido)
-        log_widget.insert(tk.END, f"Iniciando Análise (v2.2 - {tipo_envolvido})...\n")
+        log_widget.insert(tk.END, f"Iniciando Análise (v2.3 - {tipo_envolvido})...\n")
         log_widget.update()
         logo_b64 = imagem_para_base64(path_logo)
 
@@ -374,14 +376,14 @@ def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envo
 # --- GUI ---
 root = tk.Tk()
 root.title(f"Analisador Forense de Dados do Instagram")
-root.geometry("700x820") # Aumentei um pouco a altura para caber o novo campo
+root.geometry("700x820")
 
 configs_iniciais = carregar_configuracoes()
 var_instituicao = tk.StringVar(value=configs_iniciais.get("instituicao", ""))
 var_logo_path = tk.StringVar(value=configs_iniciais.get("logo_path", ""))
 var_tipo_envolvido = tk.StringVar(value=configs_iniciais.get("tipo_envolvido", "Investigado"))
 
-# ### NOVO: Lista de Logos ###
+# --- LÓGICA DE LISTAGEM DE LOGOS ---
 lista_logos_disponiveis = listar_logos_padrao()
 
 def sdb():
@@ -391,17 +393,16 @@ def sdir():
     d = filedialog.askdirectory()
     if d: ldir.config(text=d)
 
-# ### MODIFICADO: Função que escolhe logo externa limpa a seleção da lista ###
 def slogo():
     f = filedialog.askopenfilename(filetypes=[("Imagens", "*.png *.jpg *.jpeg")])
     if f: 
         var_logo_path.set(f)
-        combo_logos.set('') # Limpa o combobox
+        combo_logos.set('') 
 
-# ### NOVO: Função chamada quando seleciona uma logo da lista ###
 def ao_escolher_logo_lista(event):
     escolha = combo_logos.get()
     if escolha:
+        # Monta caminho completo usando a PASTA_LOGOS (que é inteligente e sabe onde está)
         caminho_completo = os.path.join(PASTA_LOGOS, escolha)
         var_logo_path.set(os.path.abspath(caminho_completo))
 
@@ -422,35 +423,29 @@ combo_tipo = ttk.Combobox(frame_config, textvariable=var_tipo_envolvido,
                           state="normal") 
 combo_tipo.pack(fill="x", pady=(0, 10))
 
-# --- ÁREA DA LOGO (MODIFICADA) ---
+# --- ÁREA DA LOGO ---
 tk.Label(frame_config, text="Brasão / Logo do Relatório:", font=("Arial", 9)).pack(anchor="w")
-
-# Sub-frame para organizar as opções de logo
 frame_logo_opts = tk.Frame(frame_config)
 frame_logo_opts.pack(fill="x")
 
-# Opção 1: Selecionar da Lista (se houver arquivos na pasta logo)
 if lista_logos_disponiveis:
     tk.Label(frame_logo_opts, text="Opção A: Escolher Padrão", font=("Arial", 8, "bold"), fg="gray").pack(anchor="w")
     combo_logos = ttk.Combobox(frame_logo_opts, values=lista_logos_disponiveis, state="readonly")
     combo_logos.pack(fill="x", pady=(0, 5))
     combo_logos.bind("<<ComboboxSelected>>", ao_escolher_logo_lista)
 else:
-    tk.Label(frame_logo_opts, text="(Nenhuma logo encontrada na pasta 'logo')", font=("Arial", 8), fg="red").pack(anchor="w")
-    combo_logos = ttk.Combobox(frame_logo_opts, state="disabled") # Cria dummy para não quebrar codigo
+    tk.Label(frame_logo_opts, text="(Nenhuma logo encontrada na pasta interna)", font=("Arial", 8), fg="red").pack(anchor="w")
+    combo_logos = ttk.Combobox(frame_logo_opts, state="disabled")
 
-# Opção 2: Selecionar Arquivo Externo
 tk.Label(frame_logo_opts, text="Opção B: Selecionar Arquivo do PC", font=("Arial", 8, "bold"), fg="gray").pack(anchor="w", pady=(5,0))
 btn_logo_ext = tk.Button(frame_logo_opts, text="📂 Buscar no Computador...", command=slogo, font=("Arial", 9))
 btn_logo_ext.pack(fill="x")
 
-# Mostra o caminho selecionado atualmente
 tk.Label(frame_config, text="Caminho Selecionado:", font=("Arial", 8)).pack(anchor="w", pady=(10,0))
 tk.Label(frame_config, textvariable=var_logo_path, fg="blue", font=("Arial", 8)).pack(anchor="w")
 
-# Tenta pré-selecionar no combobox se o caminho salvo for um arquivo da pasta logo
 path_salvo = configs_iniciais.get("logo_path", "")
-if path_salvo and PASTA_LOGOS in path_salvo:
+if path_salvo:
     nome_arq = os.path.basename(path_salvo)
     if nome_arq in lista_logos_disponiveis:
         combo_logos.set(nome_arq)
