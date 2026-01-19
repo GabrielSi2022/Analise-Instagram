@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 import json
 import os
+import sys  
 import re
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -15,13 +16,27 @@ ANO_MINIMO = 2015
 ANO_MAXIMO = 2029            
 ARQUIVO_CONFIG = "config_forense.json"
 
+# --- FUNÇÃO MÁGICA PARA O .EXE ACHAR AS IMAGENS ---
+def resource_path(relative_path):
+    """ Retorna o caminho absoluto para recursos, funcione em dev ou como .exe """
+    try:
+        # PyInstaller cria uma pasta temporária em _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+# Agora usamos a função para definir onde está a pasta
+PASTA_LOGOS = resource_path("logos") 
+
 # --- UTILITÁRIOS DE CONFIGURAÇÃO ---
 
 def carregar_configuracoes():
     padrao = {
         "instituicao": "Delegacia de Polícia Civil",
         "logo_path": "",
-        "tipo_envolvido": "Investigado" # Padrão
+        "tipo_envolvido": "Investigado" 
     }
     if os.path.exists(ARQUIVO_CONFIG):
         try:
@@ -58,6 +73,16 @@ def imagem_para_base64(caminho_imagem):
             return f"data:image/{ext};base64,{encoded_string}"
     except:
         return ""
+
+# ### NOVO: Função para listar arquivos na pasta 'logo' ###
+def listar_logos_padrao():
+    logos = []
+    if os.path.exists(PASTA_LOGOS):
+        for f in os.listdir(PASTA_LOGOS):
+            if f.lower().endswith(('.png', '.jpg', '.jpeg')):
+                logos.append(f)
+    logos.sort()
+    return logos
 
 # --- ENGENHARIA DE DADOS  ---
 
@@ -273,7 +298,7 @@ class RelatorioHTML:
 def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envolvido):
     try:
         salvar_configuracoes(nome_inst, path_logo, tipo_envolvido)
-        log_widget.insert(tk.END, f"Iniciando Análise (v2.1 - {tipo_envolvido})...\n")
+        log_widget.insert(tk.END, f"Iniciando Análise (v2.2 - {tipo_envolvido})...\n")
         log_widget.update()
         logo_b64 = imagem_para_base64(path_logo)
 
@@ -349,12 +374,15 @@ def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envo
 # --- GUI ---
 root = tk.Tk()
 root.title(f"Analisador Forense de Dados do Instagram")
-root.geometry("700x780")
+root.geometry("700x820") # Aumentei um pouco a altura para caber o novo campo
 
 configs_iniciais = carregar_configuracoes()
 var_instituicao = tk.StringVar(value=configs_iniciais.get("instituicao", ""))
 var_logo_path = tk.StringVar(value=configs_iniciais.get("logo_path", ""))
 var_tipo_envolvido = tk.StringVar(value=configs_iniciais.get("tipo_envolvido", "Investigado"))
+
+# ### NOVO: Lista de Logos ###
+lista_logos_disponiveis = listar_logos_padrao()
 
 def sdb():
     f = filedialog.askopenfilename(filetypes=[("Banco de Dados", "*.db"), ("Todos", "*.*")])
@@ -362,9 +390,21 @@ def sdb():
 def sdir():
     d = filedialog.askdirectory()
     if d: ldir.config(text=d)
+
+# ### MODIFICADO: Função que escolhe logo externa limpa a seleção da lista ###
 def slogo():
     f = filedialog.askopenfilename(filetypes=[("Imagens", "*.png *.jpg *.jpeg")])
-    if f: var_logo_path.set(f)
+    if f: 
+        var_logo_path.set(f)
+        combo_logos.set('') # Limpa o combobox
+
+# ### NOVO: Função chamada quando seleciona uma logo da lista ###
+def ao_escolher_logo_lista(event):
+    escolha = combo_logos.get()
+    if escolha:
+        caminho_completo = os.path.join(PASTA_LOGOS, escolha)
+        var_logo_path.set(os.path.abspath(caminho_completo))
+
 def r(): 
     processar(ldb.cget("text"), ldir.cget("text"), txt, var_instituicao.get(), var_logo_path.get(), var_tipo_envolvido.get())
 
@@ -376,18 +416,44 @@ tk.Label(frame_config, text="Nome da Instituição / Delegacia:", font=("Arial",
 entry_inst = tk.Entry(frame_config, textvariable=var_instituicao, font=("Arial", 10))
 entry_inst.pack(fill="x", pady=(0, 10))
 
-# Seletor de Tipo (NOVO)
 tk.Label(frame_config, text="Tipo de Envolvido (Dono do Celular):", font=("Arial", 9)).pack(anchor="w")
 combo_tipo = ttk.Combobox(frame_config, textvariable=var_tipo_envolvido, 
                           values=["Investigado", "Vítima", "Testemunha"], 
                           state="normal") 
 combo_tipo.pack(fill="x", pady=(0, 10))
 
-tk.Label(frame_config, text="Logo do Relatório (Imagem .PNG ou .JPG):", font=("Arial", 9)).pack(anchor="w")
-frame_logo_sel = tk.Frame(frame_config)
-frame_logo_sel.pack(fill="x")
-tk.Button(frame_logo_sel, text="Selecionar Imagem", command=slogo, font=("Arial", 9)).pack(side="left")
-tk.Label(frame_logo_sel, textvariable=var_logo_path, fg="gray", font=("Arial", 8)).pack(side="left", padx=10)
+# --- ÁREA DA LOGO (MODIFICADA) ---
+tk.Label(frame_config, text="Brasão / Logo do Relatório:", font=("Arial", 9)).pack(anchor="w")
+
+# Sub-frame para organizar as opções de logo
+frame_logo_opts = tk.Frame(frame_config)
+frame_logo_opts.pack(fill="x")
+
+# Opção 1: Selecionar da Lista (se houver arquivos na pasta logo)
+if lista_logos_disponiveis:
+    tk.Label(frame_logo_opts, text="Opção A: Escolher Padrão", font=("Arial", 8, "bold"), fg="gray").pack(anchor="w")
+    combo_logos = ttk.Combobox(frame_logo_opts, values=lista_logos_disponiveis, state="readonly")
+    combo_logos.pack(fill="x", pady=(0, 5))
+    combo_logos.bind("<<ComboboxSelected>>", ao_escolher_logo_lista)
+else:
+    tk.Label(frame_logo_opts, text="(Nenhuma logo encontrada na pasta 'logo')", font=("Arial", 8), fg="red").pack(anchor="w")
+    combo_logos = ttk.Combobox(frame_logo_opts, state="disabled") # Cria dummy para não quebrar codigo
+
+# Opção 2: Selecionar Arquivo Externo
+tk.Label(frame_logo_opts, text="Opção B: Selecionar Arquivo do PC", font=("Arial", 8, "bold"), fg="gray").pack(anchor="w", pady=(5,0))
+btn_logo_ext = tk.Button(frame_logo_opts, text="📂 Buscar no Computador...", command=slogo, font=("Arial", 9))
+btn_logo_ext.pack(fill="x")
+
+# Mostra o caminho selecionado atualmente
+tk.Label(frame_config, text="Caminho Selecionado:", font=("Arial", 8)).pack(anchor="w", pady=(10,0))
+tk.Label(frame_config, textvariable=var_logo_path, fg="blue", font=("Arial", 8)).pack(anchor="w")
+
+# Tenta pré-selecionar no combobox se o caminho salvo for um arquivo da pasta logo
+path_salvo = configs_iniciais.get("logo_path", "")
+if path_salvo and PASTA_LOGOS in path_salvo:
+    nome_arq = os.path.basename(path_salvo)
+    if nome_arq in lista_logos_disponiveis:
+        combo_logos.set(nome_arq)
 
 # FRAME PRINCIPAL
 frame_corpo = tk.LabelFrame(root, text=" 📂 Dados da Investigação ", padx=15, pady=15, font=("Arial", 10, "bold"), fg="#333")
