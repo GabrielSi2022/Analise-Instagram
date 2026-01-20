@@ -300,7 +300,7 @@ class RelatorioHTML:
         self.html_parts.append("</div></div></body></html>")
         return "".join(self.html_parts)
 
-# --- PROCESSAMENTO ---
+# --- PROCESSAMENTO (COM GERAÇÃO DE LACRE) ---
 def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envolvido):
     try:
         salvar_configuracoes(nome_inst, path_logo, tipo_envolvido)
@@ -386,15 +386,50 @@ def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envo
         conn.close()
 
         arquivo_final = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML", "*.html")], initialfile=f"Relatorio_{nome_investigado}.html", title="Salvar Relatório")
+        
         if arquivo_final:
+            # 1. Salva o HTML
             with open(arquivo_final, "w", encoding="utf-8") as f: f.write(html)
+            
+            # --- [INÍCIO DO BLOCO NOVO - LACRE DIGITAL] ---
+            log_widget.insert(tk.END, "Gerando Lacre Digital do Relatório...\n")
+            
+            # Calcula o hash do próprio HTML que acabou de ser salvo
+            hash_relatorio = calcular_hashes_arquivo(arquivo_final)
+            
+            if hash_relatorio:
+                # Define o nome do arquivo de texto (mesmo nome do HTML + _LACRE_DIGITAL.txt)
+                arquivo_txt = os.path.splitext(arquivo_final)[0] + "_LACRE_DIGITAL.txt"
+                
+                # Conteúdo do arquivo de texto
+                texto_lacre = f"""=========================================================
+          LACRE DE INTEGRIDADE DIGITAL
+=========================================================
+Este arquivo garante que o relatório HTML anexo não foi 
+alterado após sua geração.
+
+ARQUIVO ALVO: {os.path.basename(arquivo_final)}
+DATA DA GERAÇÃO: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
+
+--- ASSINATURAS DIGITAIS (HASHES) ---
+MD5:    {hash_relatorio['md5']}
+SHA-1:  {hash_relatorio['sha1']}
+SHA-256:{hash_relatorio['sha256']}
+=========================================================
+"""
+                # Salva o arquivo txt ao lado do HTML
+                with open(arquivo_txt, "w", encoding="utf-8") as f:
+                    f.write(texto_lacre)
+                
+                log_widget.insert(tk.END, f"Lacre Gerado: {arquivo_txt}\n")
+            # --- [FIM DO BLOCO NOVO] ---
+
             log_widget.insert(tk.END, f"Salvo: {arquivo_final}\n")
-            messagebox.showinfo("Sucesso", "Análise Concluída!")
+            messagebox.showinfo("Sucesso", "Análise Concluída e Lacre Gerado!")
 
     except Exception as e:
         log_widget.insert(tk.END, f"ERRO: {e}\n")
         print(e)
-
 # --- GUI ---
 root = tk.Tk(); root.title("Analisador Forense Instagram - v5.3"); root.geometry("700x850")
 
