@@ -76,7 +76,6 @@ A ferramenta utiliza uma abordagem de engenharia reversa para correlacionar dado
 
 Este software é uma ferramenta de auxílio à investigação policial. A integridade dos dados originais (Hash) é preservada, pois o software atua apenas em modo de **leitura (Read-Only)**, não modificando os arquivos de origem.
 
-**Desenvolvido para uso interno da Polícia Civil de Minas Gerais - Machado.**
 
 ---
 
