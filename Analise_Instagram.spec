@@ -5,7 +5,7 @@ a = Analysis(
     ['Analise_Instagram.py'],
     pathex=[],
     binaries=[],
-    datas=[('logos', 'logos')],
+    datas=[('logos', 'logos'), ('icone.ico', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['icone.ico'],
 )
