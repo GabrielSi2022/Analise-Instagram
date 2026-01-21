@@ -6,9 +6,11 @@ import sys
 import re
 import tkinter as tk
 import hashlib
+import webbrowser # <--- NOVO: Para abrir o PDF
 from tkinter import filedialog, messagebox, ttk
 import bisect
 import base64
+from itertools import groupby
 
 # --- CONFIGURAÇÕES GERAIS ---
 MARGEM_ERRO_MS = 60000       
@@ -36,6 +38,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 PASTA_LOGOS = resource_path("logos")
+ARQUIVO_MANUAL = resource_path("manual.pdf") # <--- NOVO: Caminho do Manual
 
 # --- UTILITÁRIOS ---
 def carregar_configuracoes():
@@ -96,6 +99,17 @@ def calcular_hashes_arquivo(caminho_arquivo):
             "sha256": sha256.hexdigest() 
         }
     except: return None
+
+# --- FUNÇÃO NOVA: ABRIR MANUAL ---
+def abrir_manual_pdf():
+    if os.path.exists(ARQUIVO_MANUAL):
+        try:
+            # Abre no visualizador padrão do sistema (Browser ou Adobe)
+            webbrowser.open(ARQUIVO_MANUAL)
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível abrir o manual: {e}")
+    else:
+        messagebox.showwarning("Aviso", "O arquivo 'manual.pdf' não foi encontrado na pasta do sistema.")
 
 # --- ENGENHARIA DE DADOS ---
 
@@ -176,7 +190,6 @@ def indexar_tudo(pasta_backup, log_widget):
     log_widget.insert(tk.END, f"Total Indexado: {count_total} (Voice Messages: {len(arquivos_voice_message)})\n")
     return arquivos_voice_message, index_ids_geral, index_sistema, lista_galeria
 
-# --- MATCH HEURÍSTICO ---
 def realizar_match_heuristico(mensagens_db, arquivos_voice):
     mapa_matches = {} 
     arquivos_disponiveis = arquivos_voice.copy()
@@ -238,39 +251,28 @@ def buscar_midia_comum(ts_msg, lista_geral, lista_sistema):
 class RelatorioHTML:
     def __init__(self):
         self.html_parts = []
-        self.css = """<style>body{font-family:'Segoe UI',Roboto,sans-serif;background:#e9ebee;padding:20px;color:#1c1e21}.container{max-width:950px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,.15);overflow:hidden}.header{background:#222;padding:30px;border-bottom:6px solid #b71c1c;color:#fff;text-align:center}.pcmg-logo{max-height:120px;margin-bottom:15px}.header h1{margin:0;font-size:24px;text-transform:uppercase}.meta-info{margin-top:20px;font-size:13px;color:#ccc;background:#333;padding:10px;border-radius:4px;display:inline-block}.hash-table{width:100%;font-family:'Consolas',monospace;font-size:11px;border-collapse:collapse;margin-top:10px}.hash-table td{border:1px solid #ddd;padding:8px}.hash-table th{background:#333;color:#fff;padding:8px;text-align:left}.chat-box{padding:30px;display:flex;flex-direction:column;gap:15px}.msg{max-width:80%;padding:12px 18px;border-radius:18px;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.1)}.sent{align-self:flex-end;background:#0084ff;color:#fff}.received{align-self:flex-start;background:#f0f2f5;color:#000}.sender-name{font-size:11px;color:#666;margin-left:12px;font-weight:700}.meta{font-size:10px;opacity:.7;text-align:right}.thread-divider{text-align:center;margin:60px 0 20px;color:#555;font-weight:700;border-top:2px solid #eee;padding-top:20px}.story-card{background:#fff;border:1px solid #e0e0e0;padding:15px;border-radius:8px;display:flex;gap:20px;margin-bottom:10px}.story-preview{width:160px;background:#000;display:flex;align-items:center;justify-content:center;border-radius:6px;padding:5px}img,video{max-width:100%;border-radius:8px}.btn-open{display:inline-block;padding:6px 12px;background:#333;color:#fff!important;font-size:11px;border-radius:4px;text-decoration:none;margin-top:5px}.audio-container{margin-top:8px;background:rgba(255,255,255,.2);padding:5px;border-radius:10px}.received .audio-container{background:rgba(0,0,0,.05)}</style>"""
+        self.css = """<style>body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:#e9ebee;margin:0;padding:20px;color:#1c1e21}.container{max-width:950px;margin:0 auto;background:white;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.15);overflow:hidden}.header{background:#222;padding:30px;border-bottom:6px solid #b71c1c;color:white;text-align:center}.pcmg-logo{max-height:120px;max-width:100%;margin-bottom:15px;display:block;margin-left:auto;margin-right:auto;object-fit:contain}.header h1{margin:0;font-size:24px;text-transform:uppercase;letter-spacing:1.2px;font-weight:800}.header h2{margin:8px 0 0;font-size:15px;font-weight:400;color:#ddd}.meta-info{margin-top:20px;font-size:13px;color:#ccc;line-height:1.6;border:1px solid #444;display:inline-block;padding:10px 20px;border-radius:4px;background:#333}.hash-table{width:100%;border-collapse:collapse;margin-top:10px;font-family:'Consolas',monospace;font-size:11px}.hash-table td{border:1px solid #ddd;padding:8px}.hash-table tr:nth-child(even){background-color:#f2f2f2}.hash-table th{padding:8px;background-color:#333;color:white;text-align:left}.search-bar{position:sticky;top:0;background:#fff;padding:15px;z-index:100;border-bottom:1px solid #ddd;box-shadow:0 2px 5px rgba(0,0,0,0.05)}.search-input{width:100%;padding:10px;font-size:14px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}.chat-box{padding:30px;display:flex;flex-direction:column;gap:15px;background:#fff}.chat-container{margin-bottom:30px;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden}.chat-container-header{background-color:#f8f9fa;padding:15px;text-align:center;font-weight:bold;border-bottom:2px solid #e9ebee;color:#555}.chat-container-body{padding:15px;display:flex;flex-direction:column;gap:10px}.msg{max-width:80%;padding:12px 18px;border-radius:18px;font-size:14px;position:relative;line-height:1.5;box-shadow:0 1px 3px rgba(0,0,0,0.1)}.sent .msg{background-color:#0084ff;color:white;border-bottom-right-radius:2px;align-self:flex-end}.received .msg{background-color:#f0f2f5;color:#050505;border-bottom-left-radius:2px;border:1px solid #ddd;align-self:flex-start}.msg-wrapper{display:flex;flex-direction:column;margin-bottom:5px}.msg-wrapper.sent{align-items:flex-end}.msg-wrapper.received{align-items:flex-start}.sender-name{font-size:11px;color:#666;margin-left:12px;margin-bottom:2px;font-weight:700;margin-top:5px}.meta{font-size:10px;margin-top:5px;opacity:0.7;text-align:right}.stories-section{padding:30px;border-top:8px solid #833AB4;background:#fdfdfd}.section-title{color:#833AB4;font-size:20px;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:20px}.story-card{background:#fff;border:1px solid #e0e0e0;padding:15px;margin-bottom:15px;border-radius:8px;display:flex;gap:20px;align-items:center;transition:transform 0.2s}.story-card:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.1)}.story-preview{width:160px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#000;border-radius:6px;overflow:hidden;min-height:100px;padding:5px}.story-info{flex:1}img,video{max-width:100%;max-height:300px;display:block;border-radius:8px}audio{width:250px;height:40px}.btn-open{display:inline-block;margin-top:8px;padding:6px 12px;background-color:#333;color:#fff!important;text-decoration:none;font-size:11px;border-radius:4px;font-weight:bold;text-align:center;border:1px solid #000;cursor:pointer}.btn-open:hover{background-color:#555}.audio-container{margin-top:8px;background:rgba(255,255,255,0.2);padding:5px;border-radius:10px;display:inline-block}.received .audio-container{background:rgba(0,0,0,0.05)}</style>"""
 
     def iniciar(self, nome_dono, id_dono, arquivo_db, nome_instituicao, logo_src, tipo_envolvido, dados_hash=None):
         img_tag = f'<img src="{logo_src}" class="pcmg-logo">' if logo_src else ""
         html_hash = ""
         if dados_hash:
-            html_hash = f"""
-            <div style="margin-top:10px;">
-                <table class="hash-table">
-                    <tr><th colspan="2">DADOS TÉCNICOS DA FONTE (ARQUIVO ANALISADO)</th></tr>
-                    <tr><td><strong>Nome do Arquivo:</strong></td><td>{dados_hash['nome']}</td></tr>
-                    <tr><td><strong>Caminho Original:</strong></td><td>{dados_hash['caminho']}</td></tr>
-                    <tr><td><strong>Tamanho:</strong></td><td>{dados_hash['tamanho']}</td></tr>
-                    <tr><td><strong>Data Modificação:</strong></td><td>{dados_hash['modificacao']}</td></tr>
-                    <tr><td><strong>MD5:</strong></td><td>{dados_hash['md5']}</td></tr>
-                    <tr><td><strong>SHA-1:</strong></td><td>{dados_hash['sha1']}</td></tr>
-                    <tr><td><strong>SHA-256:</strong></td><td>{dados_hash['sha256']}</td></tr>
-                </table>
-            </div>
-            """
+            html_hash = f"""<div style="margin-top:10px;"><table class="hash-table"><tr><th colspan="2">DADOS TÉCNICOS DA FONTE (ARQUIVO ANALISADO)</th></tr><tr><td><strong>Nome do Arquivo:</strong></td><td>{dados_hash['nome']}</td></tr><tr><td><strong>Caminho Original:</strong></td><td>{dados_hash['caminho']}</td></tr><tr><td><strong>Tamanho:</strong></td><td>{dados_hash['tamanho']}</td></tr><tr><td><strong>Data Modificação:</strong></td><td>{dados_hash['modificacao']}</td></tr><tr><td><strong>MD5:</strong></td><td>{dados_hash['md5']}</td></tr><tr><td><strong>SHA-1:</strong></td><td>{dados_hash['sha1']}</td></tr><tr><td><strong>SHA-256:</strong></td><td>{dados_hash['sha256']}</td></tr></table></div>"""
 
-        self.html_parts.append(f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório {nome_instituicao}</title>{self.css}</head><body><div class="container"><div class="header">{img_tag}<h1>{nome_instituicao}</h1><h2>RELATÓRIO DE ANÁLISE</h2><div class="meta-info">{tipo_envolvido}: <strong>{nome_dono}</strong> (ID: {id_dono})<br>FONTE: {arquivo_db}<br>DATA: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}</div></div><div class="chat-box">{TEXTO_INTRODUCAO_TECNICA}{html_hash}<hr style="border:0;height:1px;background:#ddd;margin:20px 0;">""")
+        self.html_parts.append(f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório {nome_instituicao}</title>{self.css}</head><body><div class="container"><div class="header">{img_tag}<h1>{nome_instituicao}</h1><h2>RELATÓRIO DE ANÁLISE - DADOS EXTRAÍDOS</h2><div class="meta-info">{tipo_envolvido}: <strong>{nome_dono}</strong> (ID: {id_dono})<br>FONTE: {arquivo_db}<br>DATA: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}</div></div><div class="chat-box">{TEXTO_INTRODUCAO_TECNICA}{html_hash}<hr style="border:0;height:1px;background:#ddd;margin:20px 0;"><div class="search-bar"><input type="text" id="searchInput" onkeyup="filtrarChats()" placeholder="🔍 Busca por Chat ou Conteúdo: Digite para filtrar..." class="search-input"><div style="font-size:11px; color:#999; margin-top:5px;"><strong>Filtro Inteligente:</strong> O sistema oculta automaticamente os chats que não correspondem à pesquisa.</div></div>""")
 
-    def adicionar_separador(self, nome, tid):
-        self.html_parts.append(f'<div class="thread-divider">Chat: {nome} <span style="font-weight:normal;font-size:10px">(ID: {tid})</span></div>')
+    def iniciar_container_chat(self, nome_chat, tid):
+        self.html_parts.append(f"""<div class="chat-container"><div class="chat-container-header">Chat: {nome_chat} <br><span style="font-weight:normal;font-size:10px">(ID: {tid})</span></div><div class="chat-container-body">""")
+
+    def fechar_container_chat(self):
+        self.html_parts.append("</div></div>")
 
     def adicionar_msg(self, texto, data, eh_dono, nome_rem, caminho_midia=None):
-        css = "sent" if eh_dono else "received"
+        css_wrapper = "sent" if eh_dono else "received"
         html_midia = ""
         if caminho_midia:
             link = f"file:///{caminho_midia}"
             nome_arq = os.path.basename(caminho_midia).lower()
-            
             eh_audio = False
             if 'voice_message' in nome_arq or nome_arq.endswith(('.opus', '.wav', '.mp3', '.amr', '.ogg', '.m4a')):
                 eh_audio = True
@@ -282,10 +284,11 @@ class RelatorioHTML:
             else:
                 html_midia = f'<div style="margin-top:10px;"><img src="{link}" style="cursor:pointer;" onclick="window.open(this.src)"></div>'
 
-        display = "" if eh_dono else f'<div class="sender-name">{nome_rem}</div>'
-        self.html_parts.append(f'{display}<div class="msg {css}">{texto}{html_midia}<div class="meta">{data}</div></div>')
+        display_nome = "" if eh_dono else f'<div class="sender-name">{nome_rem}</div>'
+        self.html_parts.append(f"""<div class="msg-wrapper {css_wrapper}">{display_nome}<div class="msg"><span class="msg-text">{texto}</span>{html_midia}<div class="meta">{data}</div></div></div>""")
 
     def finalizar(self, galeria):
+        script_js = """<script>function filtrarChats(){var input=document.getElementById('searchInput').value.toUpperCase();var chats=document.getElementsByClassName('chat-container');for(var i=0;i<chats.length;i++){var txtValue=chats[i].textContent||chats[i].innerText;if(txtValue.toUpperCase().indexOf(input)>-1){chats[i].style.display="";}else{chats[i].style.display="none";}}}</script>"""
         self.html_parts.append('</div><div class="stories-section"><h2 style="color:#833AB4;border-bottom:1px solid #eee">📸 Galeria de Evidências (Arquivos não vinculados)</h2>')
         for item in galeria:
             link = f"file:///{item['caminho']}"
@@ -297,14 +300,14 @@ class RelatorioHTML:
             else:
                  prev = f'<img src="{link}" style="max-height:100%;max-width:100%">'
             self.html_parts.append(f'<div class="story-card"><div class="story-preview">{prev}</div><div class="story-info"><b>{item["nome"]}</b><br><a href="{link}" target="_blank" class="btn-open">Abrir</a></div></div>')
-        self.html_parts.append("</div></div></body></html>")
+        self.html_parts.append(f"{script_js}</div></div></body></html>")
         return "".join(self.html_parts)
 
-# --- PROCESSAMENTO (COM GERAÇÃO DE LACRE) ---
+# --- PROCESSAMENTO ---
 def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envolvido):
     try:
         salvar_configuracoes(nome_inst, path_logo, tipo_envolvido)
-        log_widget.insert(tk.END, f"Iniciando (v5.3 - FINAL POLISH)...\n")
+        log_widget.insert(tk.END, f"Iniciando (v5.9 - DOC EDITION)...\n")
         log_widget.update()
         logo_b64 = imagem_para_base64(path_logo)
         
@@ -321,10 +324,11 @@ def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envo
         msgs_todas = cursor.fetchall()
         
         log_widget.insert(tk.END, "Executando Match Heurístico de Áudio...\n")
-        
         mapa_audios_vinculados = realizar_match_heuristico(msgs_todas, lista_voice)
-        
         log_widget.insert(tk.END, f"Áudios recuperados e vinculados: {len(mapa_audios_vinculados)}\n")
+
+        msgs_ordenadas = list(msgs_todas)
+        msgs_ordenadas.sort(key=lambda x: (x[0], x[1]))
 
         try:
             cursor.execute("SELECT user_id, COUNT(*) FROM messages GROUP BY user_id ORDER BY COUNT(*) DESC LIMIT 1")
@@ -355,31 +359,28 @@ def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envo
         rel = RelatorioHTML()
         rel.iniciar(f"{nome_investigado}", dono_id, os.path.basename(db_path), nome_inst, logo_b64, tipo_envolvido, dados_hash)
 
-        curr_t = None
         midias_usadas = set()
 
-        for m in msgs_todas:
-            tid, ts, uid, txt, mtype = m[0], m[1], str(m[2]), m[3], m[4]
+        for tid, grupo_msgs in groupby(msgs_ordenadas, key=lambda x: x[0]):
+            nome_chat = thread_map.get(tid, "Chat Desconhecido")
+            rel.iniciar_container_chat(nome_chat, tid)
             
-            if tid != curr_t:
-                rel.adicionar_separador(thread_map.get(tid, "Chat Desconhecido"), tid)
-                curr_t = tid
-            
-            arq = None
-            ts_ms = int(ts) / 1000 if int(ts) > 10000000000000 else int(ts)
-            ts_ms = int(ts_ms)
+            for m in grupo_msgs:
+                ts, uid, txt, mtype = m[1], str(m[2]), m[3], m[4]
+                arq = None
+                ts_ms = int(ts) / 1000 if int(ts) > 10000000000000 else int(ts)
+                ts_ms = int(ts_ms)
 
-            if ts_ms in mapa_audios_vinculados:
-                arq = mapa_audios_vinculados[ts_ms]
+                if ts_ms in mapa_audios_vinculados: arq = mapa_audios_vinculados[ts_ms]
+                elif mtype != 'text': arq = buscar_midia_comum(ts, lista_geral, lista_sys)
+                
+                if arq: midias_usadas.add(arq)
+                if txt is None: txt = f"[{mtype}]"
+                d_str = datetime.datetime.fromtimestamp(ts_ms/1000).strftime('%d/%m/%Y %H:%M:%S') if ts else "--"
+                
+                rel.adicionar_msg(str(txt).replace('\n', '<br>'), d_str, (uid == dono_id), mapa_nomes.get(uid, f"ID {uid}"), arq)
             
-            elif mtype != 'text':
-                arq = buscar_midia_comum(ts, lista_geral, lista_sys)
-            
-            if arq: midias_usadas.add(arq)
-            
-            if txt is None: txt = f"[{mtype}]"
-            d_str = datetime.datetime.fromtimestamp(ts_ms/1000).strftime('%d/%m/%Y %H:%M:%S') if ts else "--"
-            rel.adicionar_msg(str(txt).replace('\n', '<br>'), d_str, (uid == dono_id), mapa_nomes.get(uid, f"ID {uid}"), arq)
+            rel.fechar_container_chat()
         
         galeria_final = [x for x in galeria if x['caminho'] not in midias_usadas]
         html = rel.finalizar(galeria_final)
@@ -388,20 +389,11 @@ def processar(db_path, pasta_backup, log_widget, nome_inst, path_logo, tipo_envo
         arquivo_final = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML", "*.html")], initialfile=f"Relatorio_{nome_investigado}.html", title="Salvar Relatório")
         
         if arquivo_final:
-            # 1. Salva o HTML
             with open(arquivo_final, "w", encoding="utf-8") as f: f.write(html)
-            
-            # --- [INÍCIO DO BLOCO NOVO - LACRE DIGITAL] ---
             log_widget.insert(tk.END, "Gerando Lacre Digital do Relatório...\n")
-            
-            # Calcula o hash do próprio HTML que acabou de ser salvo
             hash_relatorio = calcular_hashes_arquivo(arquivo_final)
-            
             if hash_relatorio:
-                # Define o nome do arquivo de texto (mesmo nome do HTML + _LACRE_DIGITAL.txt)
                 arquivo_txt = os.path.splitext(arquivo_final)[0] + "_LACRE_DIGITAL.txt"
-                
-                # Conteúdo do arquivo de texto
                 texto_lacre = f"""=========================================================
           LACRE DE INTEGRIDADE DIGITAL
 =========================================================
@@ -417,29 +409,21 @@ SHA-1:  {hash_relatorio['sha1']}
 SHA-256:{hash_relatorio['sha256']}
 =========================================================
 """
-                # Salva o arquivo txt ao lado do HTML
-                with open(arquivo_txt, "w", encoding="utf-8") as f:
-                    f.write(texto_lacre)
-                
+                with open(arquivo_txt, "w", encoding="utf-8") as f: f.write(texto_lacre)
                 log_widget.insert(tk.END, f"Lacre Gerado: {arquivo_txt}\n")
-            # --- [FIM DO BLOCO NOVO] ---
-
             log_widget.insert(tk.END, f"Salvo: {arquivo_final}\n")
             messagebox.showinfo("Sucesso", "Análise Concluída e Lacre Gerado!")
 
     except Exception as e:
         log_widget.insert(tk.END, f"ERRO: {e}\n")
         print(e)
-# --- GUI ---
-root = tk.Tk(); root.title("Analisador Forense Instagram - v5.3"); root.geometry("700x850")
 
-# --- NOVO BLOCO PARA CARREGAR ÍCONE DE JANELA ---
+# --- GUI ---
+root = tk.Tk(); root.title("Analisador Forense Instagram - v5.9"); root.geometry("700x850")
+
 try:
-    # Tenta carregar 'icone.ico' se ele estiver embutido no .exe ou na pasta
     root.iconbitmap(resource_path("icone.ico"))
-except:
-    pass # Se não tiver ícone, segue com o padrão sem dar erro
-# ------------------------------------------------
+except: pass 
 
 conf = carregar_configuracoes()
 v_inst = tk.StringVar(value=conf.get("instituicao","")); v_logo = tk.StringVar(value=conf.get("logo_path","")); v_tipo = tk.StringVar(value=conf.get("tipo_envolvido","Investigado"))
@@ -471,9 +455,12 @@ tk.Label(fr, textvariable=v_logo, fg="blue", font=("Arial", 8)).pack(anchor="w")
 fr2 = tk.LabelFrame(root, text=" Arquivos ", padx=10, pady=10); fr2.pack(fill="both", expand=True, padx=10)
 tk.Label(fr2, text="1. Arquivo direct.db:").pack(anchor="w"); ldb = tk.Label(fr2, text="...", fg="blue"); ldb.pack(anchor="w")
 tk.Button(fr2, text="Selecionar DB", command=sdb).pack(fill="x")
-tk.Label(fr2, text="2. Pasta de Mídia:").pack(anchor="w"); ldir = tk.Label(fr2, text="...", fg="blue"); ldir.pack(anchor="w")
+tk.Label(fr2, text="2. Pasta raiz da extração:").pack(anchor="w"); ldir = tk.Label(fr2, text="...", fg="blue"); ldir.pack(anchor="w")
 tk.Button(fr2, text="Selecionar Pasta", command=sdir).pack(fill="x")
 tk.Button(fr2, text="GERAR RELATÓRIO", command=run, bg="#b71c1c", fg="white", height=2).pack(fill="x", pady=10)
+
+# --- BOTÃO DO MANUAL ---
+tk.Button(root, text="📘 ABRIR MANUAL DE INSTRUÇÕES (PDF)", command=abrir_manual_pdf, bg="#333", fg="white").pack(fill="x", padx=20, pady=5)
 
 txt = tk.Text(root, height=10, bg="#f4f4f4"); txt.pack(fill="both", padx=10, pady=5)
 root.mainloop()

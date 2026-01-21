@@ -5,7 +5,7 @@ a = Analysis(
     ['Analise_Instagram.py'],
     pathex=[],
     binaries=[],
-    datas=[('logos', 'logos'), ('icone.ico', '.')],
+    datas=[('logos', 'logos'), ('icone.ico', '.'), ('manual.pdf', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
