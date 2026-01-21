@@ -45,7 +45,7 @@ Você precisa ter em mãos a pasta da extração do celular , contendo:
 
 ### Passo a Passo
 
-1.  Execute o arquivo `Analisador_PCMG_Final.exe`.
+1.  Execute o arquivo `Insta_Forense.exe`.
 2.  **Botão 1:** Selecione o arquivo `direct.db` (geralmente localizado em `/db/direct.db`).
 3.  **Botão 2:** Selecione a **Pasta Raiz** do backup (onde estão as subpastas de mídia/cache).
 4.  Clique em **GERAR RELATÓRIO DE ANÁLISE**.
