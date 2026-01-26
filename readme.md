@@ -1,0 +1,82 @@
+# 🕵️‍♂️ Analisador Forense de Dados - Instagram (Pós-Extração)
+
+> **Ferramenta desenvolvida para a Delegacia de Polícia Civil de Machado - MG**
+
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D6)
+![Type](https://img.shields.io/badge/Type-Forensic%20Analysis-red)
+![Status](https://img.shields.io/badge/Status-Stable-green)
+
+## 📋 Sobre o Projeto
+
+Este software é uma ferramenta de **Análise Forense (Post-Extraction Analysis)** projetada para processar dados brutos extraídos de dispositivos móveis (Android), especificamente focada no aplicativo **Instagram**.
+
+Diferente de softwares de extração (como Cellebrite ), este analisador foca na **reconstrução visual e lógica** das evidências já extraídas. Ele cruza bancos de dados SQLite (`direct.db`) com o sistema de arquivos (mídias) para gerar um **Dossiê HTML Interativo** pronto para inquéritos policiais.
+
+### 🚀 Principais Funcionalidades
+
+* **Reconstrução de Chat:** Transforma dados brutos do SQLite em uma interface visual idêntica ao aplicativo original.
+* **Algoritmo de Busca Híbrida (Dual-Layer):** Utiliza busca binária e *Nearest Neighbor* para localizar áudios e vídeos que possuem timestamps ligeiramente diferentes da mensagem de texto (margem de tolerância de 60s).
+* **Filtro Anti-Ruído:** Remove automaticamente arquivos de cache corrompidos e ícones de sistema, mantendo apenas evidências relevantes.
+* **Player de Vídeo com Rota de Fuga:** Exibe vídeos compatíveis no navegador e oferece um botão de **"Download/Abrir Externo"** para codecs complexos (H.265/HEVC), garantindo que nenhuma prova seja perdida.
+* **Timeline de Evidências:** Galeria cronológica de Stories, Rascunhos e Mídias de Cache não vinculadas diretamente ao chat.
+* **Identificação Automática:** Detecta o proprietário do dispositivo e os interlocutores.
+
+---
+
+## 📥 Download
+
+Você pode baixar a versão executável (.exe) mais recente na aba de **Releases** deste repositório. Não é necessário instalar Python.
+
+[👉 **CLIQUE AQUI PARA BAIXAR A VERSÃO MAIS RECENTE ] https://github.com/GabrielSi2022/Analise-Instagram/releases
+
+> *Nota: O executável é portátil. Basta baixar e rodar.*
+
+---
+
+## 🛠️ Como Executar
+
+O software foi desenhado para ser operado com apenas 3 cliques.
+
+### Pré-requisitos
+Você precisa ter em mãos a pasta da extração do celular , contendo:
+1.  O arquivo de banco de dados: `direct.db`
+2.  A pasta raiz contendo as mídias (ex: `com.instagram.android`).
+
+### Passo a Passo
+
+1.  Execute o arquivo `Insta_Forense.exe`.
+2.  **Botão 1:** Selecione o arquivo `direct.db` (geralmente localizado em `/db/direct.db`).
+3.  **Botão 2:** Selecione a **Pasta Raiz** do backup (onde estão as subpastas de mídia/cache).
+4.  Clique em **GERAR RELATÓRIO DE ANÁLISE**.
+5.  O software irá processar milhares de arquivos e solicitará onde você deseja salvar o relatório HTML final.
+
+---
+
+## 🖥️ Screenshots
+
+
+
+| Interface do Software | Exemplo do Relatório HTML |
+|:---:|:---:|
+| ![Interface]![alt text](image.png) |
+
+## ⚙️ Detalhes Técnicos
+
+A ferramenta utiliza uma abordagem de engenharia reversa para correlacionar dados:
+
+* **Core:** Python 3.x com `sqlite3` para queries SQL e `Tkinter` para GUI.
+* **Indexação:** Utiliza o algoritmo `bisect` (Busca Binária) para indexar timestamps de arquivos em O(log n), permitindo o cruzamento de milhares de mídias em segundos.
+* **Heurística de Tempo:** Aplica uma janela de tolerância de `60000ms` (1 minuto) para vincular o arquivo físico (`os.path.getmtime` ou Regex do nome) ao registro do banco de dados (`message.timestamp`).
+* **Sanitização:** Implementa Regex para bloquear arquivos com nomes inválidos (ex: IDs de servidor confundidos com datas futuras) e validação de `magic numbers` via extensão.
+
+---
+
+## ⚖️ Aviso Legal
+
+Este software é uma ferramenta de auxílio à investigação policial. A integridade dos dados originais (Hash) é preservada, pois o software atua apenas em modo de **leitura (Read-Only)**, não modificando os arquivos de origem.
+
+
+---
+
+**Autor:** [Gabriel Henrique Bueno / Delegacia de Machado]

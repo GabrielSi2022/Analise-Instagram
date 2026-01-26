@@ -1,0 +1,31 @@
+# Ignorar arquivos temporários do Python
+__pycache__/
+*.pyc
+
+# Ignorar a pasta do ambiente virtual (bibliotecas)
+venv/
+.env
+
+# Ignorar pastas de build do PyInstaller (Onde fica o .exe)
+build/
+dist/
+*.spec
+
+# Ignorar arquivos binários pesados
+*.exe
+ffmpeg.exe
+
+# Ignorar modelos de Inteligência Artificial baixados
+*.pt
+
+# Ignorar bancos de dados e mídias de teste
+*.db
+*.mp4
+*.mp3
+*.opus
+*.m4a
+*.wav
+*.log
+
+# Ignorar o lacre gerado nos testes
+*_LACRE_DIGITAL.txt
